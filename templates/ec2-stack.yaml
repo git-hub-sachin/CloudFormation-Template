@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Launch EC2 instances in public and private subnets
+
+Parameters:
+  VpcId:
+    Type: String
+  PublicSubnetId:
+    Type: String
+  PrivateSubnetId:
+    Type: String
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+
+  PublicSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  PublicEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c1ac8a41498c1a9c
+      InstanceType: t3.micro
+      SubnetId: !Ref PublicSubnetId
+      SecurityGroupIds: [!Ref PublicSG]
+      KeyName: !Ref KeyName
+      Tags: [{ Key: Name, Value: Public-EC2 }]
+
+  PrivateEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c1ac8a41498c1a9c
+      InstanceType: t3.micro
+      SubnetId: !Ref PrivateSubnetId
+      SecurityGroupIds: [!Ref PublicSG]
+      KeyName: !Ref KeyName
+      Tags: [{ Key: Name, Value: Private-EC2 }]
