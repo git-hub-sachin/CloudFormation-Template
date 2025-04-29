@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Root stack to orchestrate VPC, EC2 bastion, and EKS stacks
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://cloud-formation-yaml-files-01.s3.eu-north-1.amazonaws.com/vpc-stack.yaml
+      Parameters: {}
+
+  EC2BastionStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: VPCStack
+    Properties:
+      TemplateURL: https://cloud-formation-yaml-files-01.s3.eu-north-1.amazonaws.com/ec2-bastion-stack.yaml
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VpcId
+        PublicSubnetId: !GetAtt VPCStack.Outputs.PublicSubnetId
+        KeyName: !Ref KeyName
+
+  EKSStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: VPCStack
+    Properties:
+      TemplateURL: https://cloud-formation-yaml-files-01.s3.eu-north-1.amazonaws.com/eks-stack.yaml
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VpcId
+        PrivateSubnetIds: !GetAtt VPCStack.Outputs.PrivateSubnetIds
+        KeyName: !Ref KeyName
+
+Outputs:
+  BastionPublicIp:
+    Value: !GetAtt EC2BastionStack.Outputs.BastionPublicIp
+    Description: Public IP of the bastion host
+
+  EKSClusterName:
+    Value: !GetAtt EKSStack.Outputs.ClusterName
+    Description: Name of the EKS cluster
+
+  EKSClusterEndpoint:
+    Value: !GetAtt EKSStack.Outputs.ClusterEndpoint
+    Description: Endpoint of the EKS cluster
